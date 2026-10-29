@@ -1,5 +1,4 @@
 
-
 export type LuaValue =
   | string
   | number
@@ -294,9 +293,11 @@ export function parseSavedVariables(
 
     const name = r.ident();
 
-    // Jawne sprawdzenie null — TypeScript zawęża typ do string.
+    // Bezpośredni throw pozwala TypeScriptowi zawęzić typ name do string.
     if (name === null) {
-      r.fail("oczekiwano nazwy zmiennej");
+      throw new Error(
+        "Błąd parsowania Lua: oczekiwano nazwy zmiennej"
+      );
     }
 
     r.expect("=");
