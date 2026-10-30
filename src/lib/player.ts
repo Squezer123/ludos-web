@@ -101,7 +101,7 @@ export interface PlayerReport {
   expCurve: { ts: Date; amount: number; source: string }[];
   sessions: SessionRow[];
   deaths: DeathRowOut[];
-  loot: { ts: Date; name: string; qty: number; quality: number }[];
+  loot: { ts: Date; itemId: number | null; name: string; qty: number; quality: number }[];
   quests: { ts: Date; name: string; exp: number; copper: number }[];
   questTotal: number;
 }
@@ -241,7 +241,7 @@ export async function getPlayerReport(id: number, range: DayRange | null): Promi
     rows<{ ts: Date | string; data: unknown }>(sql`
       select ev.ts, ev.data from events ev
       where ev.character_id = ${cid} and ev.type = 'LOOT' and ev.data->>'ja' = 'true' and ${within("ev.ts", range)}
-      order by ev.ts desc limit 12`),
+      order by ev.ts desc`),
     rows<{ ts: Date | string; data: unknown; total: string | number }>(sql`
       select ev.ts, ev.data, count(*) over () as total from events ev
       where ev.character_id = ${cid} and ev.type = 'QUEST_ODDANY' and ${within("ev.ts", range)}
@@ -285,7 +285,7 @@ export async function getPlayerReport(id: number, range: DayRange | null): Promi
     })),
     loot: lootRows.map((r) => {
       const d = asObj(r.data);
-      return { ts: new Date(r.ts), name: str(d.nazwa) ?? "?", qty: int(d.ile) ?? 1, quality: int(d.jakosc) ?? 1 };
+      return { ts: new Date(r.ts), itemId: int(d.id), name: str(d.nazwa) ?? "?", qty: int(d.ile) ?? 1, quality: int(d.jakosc) ?? 1 };
     }),
     quests: questRows.map((r) => {
       const d = asObj(r.data);
@@ -319,7 +319,7 @@ export interface SessionDetail {
   /** czas w strefach, zsumowany */
   zoneTotals: { area: string; seconds: number }[];
   levelUps: { ts: Date; level: number }[];
-  loot: { ts: Date; name: string; qty: number; quality: number }[];
+  loot: { ts: Date; itemId: number | null; name: string; qty: number; quality: number }[];
   quests: { ts: Date; name: string; exp: number; copper: number }[];
   copperEarned: number;
   goldStart: number | null;
