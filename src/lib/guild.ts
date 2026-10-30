@@ -185,12 +185,24 @@ export interface RecentGuildEvent {
   ts: string | Date;
 }
 
-/** Ostatnie zdarzenia z zaimportowanego dziennika, bez filtrowania po gildii. */
+/** Ważne zdarzenia: awanse, śmierci, PvP (jeśli log zawiera jawny znacznik) i łupy Rare+. */
 export async function listRecentEvents(limit = 12): Promise<RecentGuildEvent[]> {
   return rows<RecentGuildEvent>(sql`
     select ev.id, c.name as character, c.class, ev.type, ev.data, ev.ts
     from events ev
     join characters c on c.id = ev.character_id
+    where
+      ev.type in ('AWANS', 'SMIERC')
+      or (
+        ev.type = 'LOOT'
+        and coalesce(ev.data->>'ja', 'true') <> 'false'
+        and coalesce(ev.data->>'jakosc', '0') ~ '^[0-9]+$'
+        and (ev.data->>'jakosc')::integer >= 3
+      )
+      or (
+        ev.type = 'WALKA'
+        and lower(coalesce(ev.data->>'pvp', ev.data->>'PvP', 'false')) = 'true'
+      )
     order by ev.ts desc, ev.id desc
     limit ${limit}
   `);

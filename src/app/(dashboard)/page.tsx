@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ItemIcon } from "../../components/guild/item-icon";
 import { ActivityChart } from "../../components/guild/activity-chart";
 import { IconCoins, IconSwords, IconTrendUp, IconUsers } from "../../components/guild/icons";
 import { MetricSelect } from "../../components/guild/metric-select";
@@ -47,14 +48,18 @@ function eventDescription(event: RecentGuildEvent): string {
     return "";
   };
   switch (event.type) {
-    case "AWANS": return `Awans na poziom ${first("level", "poziom") || "wyższy poziom"}`;
-    case "SMIERC": return `Śmierć${first("killer", "zabojca", "killerName") ? ` — ${first("killer", "zabojca", "killerName")}` : ""}`;
+    case "AWANS": return `Awans na poziom ${first("lvl", "level", "poziom") || "wyższy poziom"}`;
+    case "SMIERC": return `Śmierć${first("zabojca", "killer", "killerName") ? ` — zabójca: ${first("zabojca", "killer", "killerName")}` : ""}`;
     case "ZALOGOWANIE": return "Zalogowanie do gry";
     case "QUEST_ODDANY": return `Oddano zadanie${first("nazwa", "quest", "name") ? `: ${first("nazwa", "quest", "name")}` : ""}`;
     case "ZLOTO_STAN": return "Zapisano stan złota";
     case "EXP": return `Zdobyto ${first("amount", "xp", "ilosc") || ""} XP`.trim();
-    case "LOOT": return `Zdobyto łup${first("item", "nazwa", "name") ? `: ${first("item", "nazwa", "name")}` : ""}`;
-    case "WALKA": return "Zakończono walkę";
+    case "LOOT": return `Zdobyto: ${first("nazwa", "item", "name") || "nieznany przedmiot"}${first("ile") && Number(first("ile")) > 1 ? ` ×${first("ile")}` : ""}`;
+    case "WALKA": {
+      const opponent = first("przeciwnik", "cel", "target", "victim", "of_iara", "nazwa");
+      const result = first("wynik", "result");
+      return opponent ? `${result.toLocaleLowerCase("pl-PL").includes("kill") || result.toLocaleLowerCase("pl-PL").includes("zab") ? "Pokonano" : "Walka PvP z"} ${opponent}` : "Walka PvP";
+    }
     default: return event.type.replaceAll("_", " ").toLocaleLowerCase("pl-PL").replace(/^./, (c) => c.toLocaleUpperCase("pl-PL"));
   }
 }
@@ -265,10 +270,16 @@ export default async function GuildOverviewPage({ searchParams }: { searchParams
           {recentEvents.length === 0 ? <p className="gs-members-empty">Brak zapisanych eventów.</p> : (
             <div className="gs-events-list">
               {recentEvents.map((event) => (
-                <div className="gs-event-row" key={event.id}>
-                  <span className="gs-event-dot" style={{ backgroundColor: classColor(event.class) }} />
+                <div className={`gs-event-row gs-event-${event.type.toLocaleLowerCase("pl-PL")}`} key={event.id}>
+                  {event.type === "LOOT" ? (
+                    <ItemIcon itemId={event.data?.id} name={String(event.data?.nazwa ?? "Przedmiot")} quality={Number(event.data?.jakosc ?? 0)} />
+                  ) : (
+                    <span className="gs-event-symbol" aria-hidden="true">{event.type === "AWANS" ? "↗" : event.type === "SMIERC" ? "☠" : "⚔"}</span>
+                  )}
                   <div className="gs-event-content">
-                    <div className="gs-event-main"><strong style={{ color: classColor(event.class) }}>{event.character}</strong><span>{eventDescription(event)}</span></div>
+                    <div className="gs-event-main"><strong style={{ color: classColor(event.class) }}>{event.character}</strong><span>{eventDescription(event)}</span>
+                      {event.type === "LOOT" && <small className={`gs-item-quality gs-quality-${Number(event.data?.jakosc ?? 0)}`}>{({ 3: "Rare", 4: "Epic", 5: "Legendary", 6: "Artifact", 7: "Heirloom" } as Record<number, string>)[Number(event.data?.jakosc ?? 0)] ?? "Rzadki łup"}</small>}
+                    </div>
                     <time>{formatEventDate(event.ts)}</time>
                   </div>
                 </div>
