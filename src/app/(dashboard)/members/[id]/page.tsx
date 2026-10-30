@@ -165,7 +165,29 @@ export default async function MemberDetailPage({
       </section>
 
       <div className="gs-player-grid gs-player-grid-even">
-        <section className="gs-card gs-player-card gs-player-table-card"><h2 className="gs-card-title">Ostatni loot</h2>{data.loot.length === 0 ? <p className="gs-members-empty">Brak lootu w wybranym zakresie.</p> : <div className="gs-members-table-wrap gs-player-loot-scroll"><table className="gs-members-table"><thead><tr><th>Przedmiot</th><th>Jakość</th><th>Kiedy</th></tr></thead><tbody>{data.loot.map((item, i) => <tr key={`${item.itemId ?? item.name}-${item.ts.getTime()}-${i}`}><td><span className="gs-player-loot-item"><ItemIcon itemId={item.itemId} name={item.name} quality={item.quality} /><span className={`gs-player-loot-name gs-quality-${item.quality}`}>{item.name}{item.qty > 1 ? ` ×${item.qty}` : ""}</span></span></td><td><span className={`gs-item-quality gs-quality-${item.quality}`}>{QUALITY_LABEL[item.quality] ?? ""}</span></td><td>{fmtDateTime(item.ts)}</td></tr>)}</tbody></table></div>}</section>
+        <section className="gs-card gs-player-card gs-player-table-card"><h2 className="gs-card-title">Ostatni loot</h2>{data.loot.length === 0 ? <p className="gs-members-empty">Brak lootu w wybranym zakresie.</p> : <div className="gs-members-table-wrap gs-player-loot-scroll"><table className="gs-members-table"><thead><tr><th>Przedmiot</th><th>Jakość</th><th>Kiedy</th></tr></thead><tbody>{data.loot.map((item, i) => <tr key={`${item.itemId ?? item.name}-${item.ts.getTime()}-${i}`}><td>
+  {item.itemId !== null && item.itemId > 0 ? (
+    <a
+      className="gs-player-loot-item gs-player-loot-link"
+      href={`https://www.wowhead.com/item=${item.itemId}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      title={`Zobacz ${item.name} w bazie Wowhead (otworzy się w nowej karcie)`}
+    >
+      <ItemIcon itemId={item.itemId} name={item.name} quality={item.quality} />
+      <span className={`gs-player-loot-name gs-quality-${item.quality}`}>
+        {item.name}{item.qty > 1 ? ` ×${item.qty}` : ""}
+      </span>
+    </a>
+  ) : (
+    <span className="gs-player-loot-item">
+      <ItemIcon itemId={item.itemId} name={item.name} quality={item.quality} />
+      <span className={`gs-player-loot-name gs-quality-${item.quality}`}>
+        {item.name}{item.qty > 1 ? ` ×${item.qty}` : ""}
+      </span>
+    </span>
+  )}
+</td><td><span className={`gs-item-quality gs-quality-${item.quality}`}>{QUALITY_LABEL[item.quality] ?? ""}</span></td><td>{fmtDateTime(item.ts)}</td></tr>)}</tbody></table></div>}</section>
         <section className="gs-card gs-player-card gs-player-table-card"><h2 className="gs-card-title">Oddane questy ({data.questTotal})</h2>{data.quests.length === 0 ? <p className="gs-members-empty">Brak oddanych questów w wybranym zakresie.</p> : <div className="gs-members-table-wrap"><table className="gs-members-table"><thead><tr><th>Quest</th><th>EXP</th><th>Nagroda</th><th>Kiedy</th></tr></thead><tbody>{data.quests.map((q, i) => <tr key={`${q.name}-${i}`}><td>{q.name}</td><td>{fmtInt(q.exp)}</td><td>{q.copper ? fmtMoney(q.copper) : "—"}</td><td>{fmtDateTime(q.ts)}</td></tr>)}</tbody></table></div>}</section>
       </div>
     </div>
