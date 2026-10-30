@@ -360,6 +360,9 @@
 .gs-event-walka .gs-event-symbol { color: #e7a15c; }
 .gs-item-icon { overflow: hidden; padding: 2px; }
 .gs-item-icon img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 6px; }
+.gs-quality-0 { border-color: rgba(157, 157, 157, .65); color: #9d9d9d; }
+.gs-quality-1 { border-color: rgba(255, 255, 255, .35); color: #f1f1f1; }
+.gs-quality-2 { border-color: rgba(30, 255, 0, .55); color: #35e34a; }
 .gs-quality-3 { border-color: rgba(0, 112, 221, .8); color: #49a5ff; }
 .gs-quality-4 { border-color: rgba(163, 53, 238, .8); color: #c77dff; }
 .gs-quality-5 { border-color: rgba(255, 128, 0, .85); color: #ff9a3d; }
@@ -372,6 +375,17 @@
 .gs-event-main small.gs-quality-6 { color: #e6cc80; }
 .gs-event-main small.gs-quality-7 { color: #00ccff; }
 
-/* Ikona i nazwa przedmiotu w sekcji Ostatni loot na profilu gracza. */
+/* Ikona, kolor jakości i przewijanie sekcji Ostatni loot na profilu gracza. */
+.gs-player-loot-scroll { max-height: 420px; overflow: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
+.gs-player-loot-scroll .gs-members-table thead th { position: sticky; top: 0; z-index: 2; background: var(--gs-card, #151922); }
 .gs-player-loot-item { display: inline-flex; align-items: center; gap: 10px; min-width: 180px; }
 .gs-player-loot-item .gs-item-icon { width: 32px; height: 32px; flex-basis: 32px; border-radius: 7px; }
+.gs-player-loot-name { font-weight: 600; }
+.gs-player-loot-name.gs-quality-0 { color: #9d9d9d; }
+.gs-player-loot-name.gs-quality-1 { color: #f1f1f1; }
+.gs-player-loot-name.gs-quality-2 { color: #35e34a; }
+.gs-player-loot-name.gs-quality-3 { color: #49a5ff; }
+.gs-player-loot-name.gs-quality-4 { color: #c77dff; }
+.gs-player-loot-name.gs-quality-5 { color: #ff9a3d; }
+.gs-player-loot-name.gs-quality-6 { color: #e6cc80; }
+.gs-player-loot-name.gs-quality-7 { color: #00ccff; }
