@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { hasCharacters, listMembers } from "../../../lib/guild";
+import { getGuildRankings, hasCharacters, listMembers, resolveGuild } from "../../../lib/guild";
+import { fmtDuration, fmtInt, fmtMoney } from "../../../lib/format";
 
 const SECTIONS: Record<string, string> = {
   members: "Członkowie",
@@ -61,6 +62,51 @@ export default async function SectionPage({ params }: { params: Promise<{ sectio
             </div>
           )}
         </section>
+      </>
+    );
+  }
+
+  if (section === "rankings") {
+    const guild = await resolveGuild();
+    const rows = await getGuildRankings(guild.filter);
+    const rankings = [
+      { key: "level", title: "Poziom", value: (r: typeof rows[number]) => r.level ?? 0, format: (v: number) => fmtInt(v), empty: "Brak danych o poziomach." },
+      { key: "xp", title: "Zdobyte doświadczenie", value: (r: typeof rows[number]) => r.xp, format: (v: number) => `${fmtInt(v)} XP`, empty: "Brak danych o doświadczeniu." },
+      { key: "kills", title: "Zabójstwa", value: (r: typeof rows[number]) => r.kills, format: (v: number) => fmtInt(v), empty: "Brak zarejestrowanych zabójstw." },
+      { key: "played", title: "Czas gry", value: (r: typeof rows[number]) => r.playedSeconds, format: (v: number) => fmtDuration(v), empty: "Brak danych o czasie gry." },
+      { key: "gold", title: "Zebrane złoto", value: (r: typeof rows[number]) => r.copper, format: (v: number) => fmtMoney(v), empty: "Brak danych o zebranym złocie." },
+    ];
+    return (
+      <>
+        <h1 className="gs-title">Rankingi</h1>
+        <p className="gs-sub">Zestawienia postaci gildii {guild.name}, na podstawie wszystkich zaimportowanych logów.</p>
+        {rows.length === 0 ? <section className="gs-card gs-soon">Brak postaci do wyświetlenia w rankingach.</section> : (
+          <div className="gs-rankings-grid">
+            {rankings.map((ranking) => {
+              const sorted = [...rows].sort((a, b) => ranking.value(b) - ranking.value(a) || a.name.localeCompare(b.name, "pl"));
+              const ranked = sorted.filter((r) => ranking.value(r) > 0).slice(0, 10);
+              return (
+                <section className="gs-card gs-ranking-card" key={ranking.key}>
+                  <div className="gs-ranking-head"><h2 className="gs-card-title">{ranking.title}</h2><span className="gs-members-count">TOP 10</span></div>
+                  {ranked.length === 0 ? <p className="gs-members-empty">{ranking.empty}</p> : (
+                    <div className="gs-members-table-wrap">
+                      <table className="gs-members-table gs-ranking-table">
+                        <thead><tr><th>#</th><th>Postać</th><th>Wynik</th></tr></thead>
+                        <tbody>{ranked.map((r, i) => (
+                          <tr key={r.id}>
+                            <td className="gs-rank-position">{i + 1}</td>
+                            <td><Link className="gs-member-name" style={{ color: classColor(r.class) }} href={`/members/${r.id}`}>{r.name}</Link><span className="gs-rank-class">{r.class ?? "Nieznana klasa"}</span></td>
+                            <td className="gs-rank-value">{ranking.format(ranking.value(r))}</td>
+                          </tr>
+                        ))}</tbody>
+                      </table>
+                    </div>
+                  )}
+                </section>
+              );
+            })}
+          </div>
+        )}
       </>
     );
   }

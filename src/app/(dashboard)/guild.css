@@ -255,3 +255,17 @@
 @media (min-width: 1100px) { .gs-player-tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 @media (max-width: 900px) { .gs-player-grid, .gs-player-grid-even { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 599px) { .gs-player-header { align-items: flex-start; } .gs-player-level { padding: 6px 8px; font-size: 12px; } .gs-player-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; } .gs-player-tile { padding: 11px; } .gs-player-tile b { font-size: 17px; } .gs-player-card { padding: 14px; } }
+
+
+/* ---------- rankingi gildii ---------- */
+.gs-rankings-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 22px; }
+.gs-ranking-card { min-width: 0; padding: 20px; }
+.gs-ranking-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.gs-ranking-head .gs-card-title { font-size: 19px; }
+.gs-ranking-table td { vertical-align: middle; }
+.gs-ranking-table th:first-child, .gs-ranking-table td:first-child { width: 42px; padding-left: 8px; }
+.gs-rank-position { color: var(--gs-gold) !important; font-weight: 700; font-variant-numeric: tabular-nums; }
+.gs-rank-class { display: block; color: var(--gs-mute); font-size: 11px; margin-top: 2px; }
+.gs-rank-value { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+@media (max-width: 900px) { .gs-rankings-grid { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 599px) { .gs-ranking-card { padding: 14px; } .gs-ranking-head .gs-card-title { font-size: 17px; } }

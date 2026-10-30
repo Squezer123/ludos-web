@@ -195,3 +195,49 @@ export async function getClassCounts(): Promise<ClassCount[]> {
   `);
   return result.map((r) => ({ name: r.name, count: Number(r.count) }));
 }
+
+
+export interface GuildRankingRow {
+  id: number;
+  name: string;
+  class: string | null;
+  level: number | null;
+  xp: number;
+  kills: number;
+  playedSeconds: number;
+  copper: number;
+}
+
+/** Agregaty do rankingów postaci w wybranej gildii. */
+export async function getGuildRankings(guild: string | null): Promise<GuildRankingRow[]> {
+  return rows<GuildRankingRow>(sql`
+    select
+      c.id, c.name, c.class, c.level,
+      coalesce(x.total, 0)::bigint as xp,
+      coalesce(k.total, 0)::bigint as kills,
+      coalesce(c.played_seconds, 0)::bigint as "playedSeconds",
+      coalesce(g.total, 0)::bigint as copper
+    from characters c
+    left join (
+      select character_id, sum(amount) as total
+      from exp_gains group by character_id
+    ) x on x.character_id = c.id
+    left join (
+      select character_id, sum(kills) as total
+      from fights group by character_id
+    ) k on k.character_id = c.id
+    left join (
+      select character_id,
+        sum(case type when 'ZLOTO' then coalesce((data->>'miedz')::bigint, 0)
+                      else coalesce((data->>'zloto')::bigint, 0) end) as total
+      from events where type in ('ZLOTO', 'QUEST_ODDANY')
+      group by character_id
+    ) g on g.character_id = c.id
+    where ${inGuild(guild)}
+    order by c.name asc
+  `).then((result) => result.map((r) => ({
+    ...r,
+    id: Number(r.id), level: r.level == null ? null : Number(r.level),
+    xp: Number(r.xp), kills: Number(r.kills), playedSeconds: Number(r.playedSeconds), copper: Number(r.copper),
+  })));
+}
