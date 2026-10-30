@@ -152,6 +152,9 @@
 .gs-hit .gs-guide { stroke: rgba(255, 255, 255, 0.22); stroke-width: 1; opacity: 0; }
 .gs-hit .gs-dot { fill: var(--gs-gold); stroke: var(--gs-card); stroke-width: 2; opacity: 0; }
 .gs-hit:hover .gs-guide, .gs-hit:hover .gs-dot { opacity: 1; }
+.gs-chart .gs-bar { fill: var(--gs-gold); opacity: 0.82; }
+.gs-bar-hit:hover .gs-bar { opacity: 1; }
+.gs-bar-hit:hover rect:first-child { fill: rgba(255, 255, 255, 0.04); }
 
 .gs-soon { margin-top: 24px; padding: 28px; color: var(--gs-mute); }
 
@@ -275,3 +278,21 @@
 .gs-profession-select-label { display: block; color: var(--gs-mute); font-size: 12px; font-weight: 600; margin: 14px 0 6px; }
 .gs-profession-select { appearance: none; width: min(100%, 360px); min-height: 42px; border: 1px solid var(--gs-line); border-radius: 9px; padding: 0 38px 0 12px; color: var(--gs-ink); background: var(--gs-card); font: inherit; cursor: pointer; }
 .gs-profession-select:focus-visible { outline: 2px solid var(--gs-gold); outline-offset: 2px; }
+
+/* ---- profil gracza: sesje, oś czasu, zakres ---- */
+.gs-player-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 4px 0 16px; }
+.gs-player-sub-range { color: var(--gs-mute); margin: 0; }
+.gs-player-card .gs-chart-head { margin-bottom: 10px; }
+.gs-player-card .gs-chart-head .gs-card-title { margin: 0; }
+.gs-session-link { color: var(--gs-gold); font-weight: 600; }
+.gs-session-link:hover { text-decoration: underline; }
+.gs-session-nav { display: flex; gap: 8px; margin-left: auto; }
+.gs-session-state { display: inline-block; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--gs-line); font-size: 12px; color: var(--gs-mute); }
+.gs-session-state[data-state="trwa"] { color: var(--gs-gold); border-color: var(--gs-gold-dim); }
+.gs-session-state[data-state="przerwana"] { color: #e0836f; }
+.gs-note { color: var(--gs-mute); font-size: 12px; margin: 8px 0 0; }
+.gs-path { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.gs-path li { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--gs-line); align-items: baseline; }
+.gs-path time { color: var(--gs-mute); font-variant-numeric: tabular-nums; font-size: 12px; }
+.gs-path span:last-child { color: var(--gs-mute); font-variant-numeric: tabular-nums; font-size: 13px; }
+.gs-path small { color: var(--gs-mute); display: block; font-size: 12px; }

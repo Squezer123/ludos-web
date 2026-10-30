@@ -15,9 +15,13 @@ export function RangeControls() {
   const [to, setTo] = useState("");
   const box = useRef<HTMLDivElement>(null);
 
+  // Na profilu gracza dochodzi opcja "Całość" (bez zakresu = cały okres); na stronie sesji zakres nic nie zmienia.
+  const onPlayer = /^\/members\/\d+/.test(pathname);
+  const onSession = /^\/members\/\d+\/sessions\//.test(pathname);
+
   const custom = isDay(sp.get("from")) && isDay(sp.get("to"));
   const rangeParam = sp.get("range");
-  const active = custom ? "custom" : PRESETS.find((p) => p === rangeParam) ?? "30d";
+  const active = custom ? "custom" : PRESETS.find((p) => p === rangeParam) ?? (onPlayer ? "all" : "30d");
 
   const url = (patch: Record<string, string | null>) => {
     const q = new URLSearchParams(sp.toString());
@@ -52,8 +56,15 @@ export function RangeControls() {
     router.push(url({ from, to }), { scroll: false });
   };
 
+  if (onSession) return null;
+
   return (
     <div className="gs-range" ref={box}>
+      {onPlayer && (
+        <Link href={url({})} scroll={false} replace className="gs-chip" aria-current={active === "all" ? "true" : undefined}>
+          Całość
+        </Link>
+      )}
       {PRESETS.map((p) => (
         <Link
           key={p} href={url({ range: p })} scroll={false} replace
