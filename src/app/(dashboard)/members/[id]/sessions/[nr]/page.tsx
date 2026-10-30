@@ -3,16 +3,28 @@ import { notFound } from "next/navigation";
 import { MetricSelect } from "../../../../../../components/guild/metric-select";
 import { BarsChart } from "../../../../../../components/player/bars-chart";
 import { BarList } from "../../../../../../components/charts";
-import { QUALITY_LABEL, SOURCE_LABEL, classInfo, fmtDateTime, fmtDuration, fmtInt, fmtMoney, fmtTime } from "../../../../../../lib/format";
-import { getSessionDetail } from "../../../../../../lib/player"
+import {
+  QUALITY_LABEL,
+  SOURCE_LABEL,
+  classInfo,
+  fmtDateTime,
+  fmtDuration,
+  fmtInt,
+  fmtMoney,
+  fmtTime,
+} from "../../../../../../lib/format";
+import { getSessionDetail } from "../../../../../../lib/player";
 import { buildTimeline } from "../../../../../../lib/timeline";
 
 export const dynamic = "force-dynamic";
 
 type SP = Record<string, string | string[] | undefined>;
-const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
+
+const one = (v: string | string[] | undefined) =>
+  Array.isArray(v) ? v[0] : v;
 
 const METRICS = ["xp", "kills", "dmg", "taken", "heal", "fights"] as const;
+
 type Metric = (typeof METRICS)[number];
 
 const METRIC_LABEL: Record<Metric, string> = {
@@ -62,13 +74,14 @@ export default async function SessionPage({
   }
 
   const m = one(sp.metric);
+
   const metric: Metric = (METRICS as readonly string[]).includes(m ?? "")
     ? (m as Metric)
     : "xp";
 
   const data = await getSessionDetail(cid, snr);
 
-  if (data === null) {
+  if (!data) {
     notFound();
   }
 
@@ -78,10 +91,12 @@ export default async function SessionPage({
   const durationSec = Math.max(0, (data.endMs - data.startMs) / 1000);
   const expTotal = data.exp.reduce((a, r) => a + r.amount, 0);
 
-  type Fight = (typeof data.fights)[number];
+  // Wyodrębnienie tablicy zapobiega błędowi TypeScript:
+  // "'data' is possibly 'null'" w typie parametru funkcji.
+  const fights = data.fights;
 
-  const sum = (pick: (f: Fight) => number): number =>
-    data.fights.reduce((a, f) => a + pick(f), 0);
+  const sum = (pick: (f: (typeof fights)[number]) => number) =>
+    fights.reduce((a, f) => a + pick(f), 0);
 
   const kills = sum((f) => f.kills);
   const dmgDone = sum((f) => f.dmgDone);
@@ -101,9 +116,10 @@ export default async function SessionPage({
 
   const lvlFrom = levels.length ? Math.min(...levels) : null;
 
-  const lvlTo = levels.length
-    ? Math.max(...levels, ...data.levelUps.map((u) => u.level))
-    : null;
+  const lvlTo =
+    levels.length > 0
+      ? Math.max(...levels, ...data.levelUps.map((u) => u.level))
+      : null;
 
   const levelText =
     lvlFrom === null
@@ -113,35 +129,41 @@ export default async function SessionPage({
         : String(lvlFrom);
 
   const timeline = buildTimeline(data.startMs, data.endMs, {
-    xp: data.exp.map((r) => ({ t: r.ts.getTime(), v: r.amount })),
-    kills: data.fights.map((f) => ({
+    xp: data.exp.map((r) => ({
+      t: r.ts.getTime(),
+      v: r.amount,
+    })),
+    kills: fights.map((f) => ({
       t: f.startedAt.getTime(),
       v: f.kills,
     })),
-    dmg: data.fights.map((f) => ({
+    dmg: fights.map((f) => ({
       t: f.startedAt.getTime(),
       v: f.dmgDone,
     })),
-    taken: data.fights.map((f) => ({
+    taken: fights.map((f) => ({
       t: f.startedAt.getTime(),
       v: f.dmgTaken,
     })),
-    heal: data.fights.map((f) => ({
+    heal: fights.map((f) => ({
       t: f.startedAt.getTime(),
       v: f.healDone,
     })),
-    fights: data.fights.map((f) => ({
+    fights: fights.map((f) => ({
       t: f.startedAt.getTime(),
       v: 1,
     })),
   });
 
   const values = timeline.values[metric];
+
   const intMetric = metric === "kills" || metric === "fights";
 
   const tips = timeline.labels.map(
     (l, i) =>
-      `${l} (+${timeline.bucketMin} min): ${Math.round(values[i]).toLocaleString("pl-PL")} ${METRIC_UNIT[metric]}`
+      `${l} (+${timeline.bucketMin} min): ${Math.round(
+        values[i],
+      ).toLocaleString("pl-PL")} ${METRIC_UNIT[metric]}`,
   );
 
   const zoneRows = data.zoneTotals
@@ -154,7 +176,10 @@ export default async function SessionPage({
   const sourceMap = new Map<string, number>();
 
   for (const r of data.exp) {
-    sourceMap.set(r.source, (sourceMap.get(r.source) ?? 0) + r.amount);
+    sourceMap.set(
+      r.source,
+      (sourceMap.get(r.source) ?? 0) + r.amount,
+    );
   }
 
   const sourceRows = [...sourceMap.entries()].map(([source, value]) => ({
@@ -163,20 +188,35 @@ export default async function SessionPage({
   }));
 
   const tiles: [string, string][] = [
-    ["Czas trwania", durationSec > 0 ? fmtDuration(durationSec) : "—"],
+    [
+      "Czas trwania",
+      durationSec > 0 ? fmtDuration(durationSec) : "—",
+    ],
     ["Zdobyte EXP", fmtInt(expTotal)],
-    ["EXP / godzinę", expPerHour !== null ? fmtInt(expPerHour) : "—"],
+    [
+      "EXP / godzinę",
+      expPerHour !== null ? fmtInt(expPerHour) : "—",
+    ],
     ["Poziom", levelText],
     ["Zabójstwa", fmtInt(kills)],
-    ["Walki", fmtInt(data.fights.length)],
+    ["Walki", fmtInt(fights.length)],
     ["Śmierci", fmtInt(data.deaths.length)],
-    ["Obrażenia / sek. walki", dps !== null ? fmtInt(dps) : "—"],
+    [
+      "Obrażenia / sek. walki",
+      dps !== null ? fmtInt(dps) : "—",
+    ],
     ["Obrażenia zadane", fmtInt(dmgDone)],
     ["Obrażenia otrzymane", fmtInt(dmgTaken)],
     ["Leczenie wykonane", fmtInt(healDone)],
     ["Leczenie otrzymane", fmtInt(healTaken)],
-    ["Złoto zdobyte", data.copperEarned > 0 ? fmtMoney(data.copperEarned) : "—"],
-    ["Złoto na starcie", data.goldStart !== null ? fmtMoney(data.goldStart) : "—"],
+    [
+      "Złoto zdobyte",
+      data.copperEarned > 0 ? fmtMoney(data.copperEarned) : "—",
+    ],
+    [
+      "Złoto na starcie",
+      data.goldStart !== null ? fmtMoney(data.goldStart) : "—",
+    ],
     ["Reloady", String(s.reloads)],
     ["Awanse", String(data.levelUps.length)],
   ];
@@ -200,8 +240,12 @@ export default async function SessionPage({
           <h1 className="gs-title">Sesja #{s.nr}</h1>
 
           <p className="gs-player-sub">
-            {c.name} · {fmtDateTime(new Date(data.startMs))} – {fmtTime(data.endMs)}{" "}
-            <span className="gs-session-state" data-state={s.state ?? ""}>
+            {c.name} · {fmtDateTime(new Date(data.startMs))} –{" "}
+            {fmtTime(data.endMs)}{" "}
+            <span
+              className="gs-session-state"
+              data-state={s.state ?? ""}
+            >
               {s.state ? STATE_LABEL[s.state] ?? s.state : "—"}
             </span>
           </p>
@@ -209,13 +253,19 @@ export default async function SessionPage({
 
         <div className="gs-session-nav">
           {data.prevNr !== null && (
-            <Link className="gs-chip" href={`${base}/sessions/${data.prevNr}`}>
+            <Link
+              className="gs-chip"
+              href={`${base}/sessions/${data.prevNr}`}
+            >
               ← #{data.prevNr}
             </Link>
           )}
 
           {data.nextNr !== null && (
-            <Link className="gs-chip" href={`${base}/sessions/${data.nextNr}`}>
+            <Link
+              className="gs-chip"
+              href={`${base}/sessions/${data.nextNr}`}
+            >
               #{data.nextNr} →
             </Link>
           )}
@@ -231,7 +281,10 @@ export default async function SessionPage({
         ))}
       </div>
 
-      <section className="gs-card gs-player-card" style={{ marginTop: 16 }}>
+      <section
+        className="gs-card gs-player-card"
+        style={{ marginTop: 16 }}
+      >
         <div className="gs-chart-head">
           <h2 className="gs-card-title">Przebieg sesji</h2>
 
@@ -254,8 +307,8 @@ export default async function SessionPage({
         />
 
         <p className="gs-note">
-          Każdy słupek to {timeline.bucketMin} min sesji, podpis oznacza godzinę
-          początku (Europe/Warsaw).
+          Każdy słupek to {timeline.bucketMin} min sesji, podpis oznacza
+          godzinę początku (Europe/Warsaw).
         </p>
       </section>
 
@@ -272,10 +325,12 @@ export default async function SessionPage({
               {data.zones.map((z, i) => (
                 <li key={`${z.area}-${i}`}>
                   <time>{fmtTime(z.ts)}</time>
+
                   <span>
                     {z.area}
                     {z.sub ? <small>{z.sub}</small> : null}
                   </span>
+
                   <span>{fmtDuration(z.seconds)}</span>
                 </li>
               ))}
@@ -297,9 +352,9 @@ export default async function SessionPage({
       </div>
 
       <section className="gs-card gs-player-card gs-player-table-card">
-        <h2 className="gs-card-title">Walki ({data.fights.length})</h2>
+        <h2 className="gs-card-title">Walki ({fights.length})</h2>
 
-        {data.fights.length === 0 ? (
+        {fights.length === 0 ? (
           <p className="gs-members-empty">Brak walk w tej sesji.</p>
         ) : (
           <div className="gs-members-table-wrap">
@@ -319,20 +374,27 @@ export default async function SessionPage({
               </thead>
 
               <tbody>
-                {data.fights.slice(0, 100).map((f) => (
+                {fights.slice(0, 100).map((f) => (
                   <tr key={f.eventId}>
                     <td>{fmtTime(f.startedAt)}</td>
-                    <td>{f.seconds > 0 ? fmtDuration(f.seconds) : "—"}</td>
+
+                    <td>
+                      {f.seconds > 0 ? fmtDuration(f.seconds) : "—"}
+                    </td>
+
                     <td>
                       {f.targets ?? "—"}
                       {f.pvp ? " · PvP" : ""}
                     </td>
+
                     <td>{fmtInt(f.dmgDone)}</td>
+
                     <td>
                       {f.seconds > 0
                         ? fmtInt(Math.round(f.dmgDone / f.seconds))
                         : "—"}
                     </td>
+
                     <td>{fmtInt(f.dmgTaken)}</td>
                     <td>{fmtInt(f.healDone)}</td>
                     <td>{f.kills}</td>
@@ -344,9 +406,9 @@ export default async function SessionPage({
           </div>
         )}
 
-        {data.fights.length > 100 && (
+        {fights.length > 100 && (
           <p className="gs-note">
-            Pokazano pierwsze 100 walk z {data.fights.length}.
+            Pokazano pierwsze 100 walk z {fights.length}.
           </p>
         )}
       </section>
@@ -373,6 +435,7 @@ export default async function SessionPage({
                 {data.deaths.map((d) => (
                   <tr key={d.eventId}>
                     <td>{fmtTime(d.ts)}</td>
+
                     <td>
                       {d.zone ?? "—"}
                       {d.subzone ? ` — ${d.subzone}` : ""}
@@ -380,17 +443,24 @@ export default async function SessionPage({
                         ? ` (${d.instance})`
                         : ""}
                     </td>
+
                     <td>
                       {d.killer ?? "nieznany"}
                       {d.pvp ? " · PvP" : ""}
                     </td>
+
                     <td>
                       {d.damage != null
-                        ? `${fmtInt(d.damage)}${d.spell ? ` (${d.spell})` : ""}`
+                        ? `${fmtInt(d.damage)}${
+                            d.spell ? ` (${d.spell})` : ""
+                          }`
                         : "—"}
                     </td>
+
                     <td>
-                      {d.durability != null ? `${d.durability}%` : "—"}
+                      {d.durability != null
+                        ? `${d.durability}%`
+                        : "—"}
                     </td>
                   </tr>
                 ))}
@@ -405,7 +475,9 @@ export default async function SessionPage({
           <h2 className="gs-card-title">Loot ({data.loot.length})</h2>
 
           {data.loot.length === 0 ? (
-            <p className="gs-members-empty">Brak lootu w tej sesji.</p>
+            <p className="gs-members-empty">
+              Brak lootu w tej sesji.
+            </p>
           ) : (
             <div className="gs-members-table-wrap">
               <table className="gs-members-table">
@@ -424,6 +496,7 @@ export default async function SessionPage({
                         {item.name}
                         {item.qty > 1 ? ` ×${item.qty}` : ""}
                       </td>
+
                       <td>{QUALITY_LABEL[item.quality] ?? ""}</td>
                       <td>{fmtTime(item.ts)}</td>
                     </tr>
