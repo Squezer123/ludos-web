@@ -23,13 +23,15 @@ type SP = Record<string, string | string[] | undefined>;
 const one = (v: string | string[] | undefined) =>
   Array.isArray(v) ? v[0] : v;
 
-const METRICS = ["xp", "kills", "dmg", "taken", "heal", "fights"] as const;
+const METRICS = ["xp", "kills", "killsPve", "killsPvp", "dmg", "taken", "heal", "fights"] as const;
 
 type Metric = (typeof METRICS)[number];
 
 const METRIC_LABEL: Record<Metric, string> = {
   xp: "EXP",
-  kills: "Zabójstwa",
+  kills: "Zabójstwa (razem)",
+  killsPve: "Zabójstwa PvE",
+  killsPvp: "Zabójstwa PvP",
   dmg: "Obrażenia zadane",
   taken: "Obrażenia otrzymane",
   heal: "Leczenie wykonane",
@@ -39,6 +41,8 @@ const METRIC_LABEL: Record<Metric, string> = {
 const METRIC_UNIT: Record<Metric, string> = {
   xp: "exp",
   kills: "zabójstw",
+  killsPve: "zabójstw PvE",
+  killsPvp: "zabójstw PvP",
   dmg: "obrażeń",
   taken: "obrażeń",
   heal: "leczenia",
@@ -98,7 +102,8 @@ export default async function SessionPage({
   const sum = (pick: (f: (typeof fights)[number]) => number) =>
     fights.reduce((a, f) => a + pick(f), 0);
 
-  const kills = sum((f) => f.kills);
+  const killsPve = sum((f) => (f.pvp ? 0 : f.kills));
+  const killsPvp = sum((f) => (f.pvp ? f.kills : 0));
   const dmgDone = sum((f) => f.dmgDone);
   const dmgTaken = sum((f) => f.dmgTaken);
   const healDone = sum((f) => f.healDone);
@@ -137,6 +142,14 @@ export default async function SessionPage({
       t: f.startedAt.getTime(),
       v: f.kills,
     })),
+    killsPve: fights.map((f) => ({
+      t: f.startedAt.getTime(),
+      v: f.pvp ? 0 : f.kills,
+    })),
+    killsPvp: fights.map((f) => ({
+      t: f.startedAt.getTime(),
+      v: f.pvp ? f.kills : 0,
+    })),
     dmg: fights.map((f) => ({
       t: f.startedAt.getTime(),
       v: f.dmgDone,
@@ -157,7 +170,7 @@ export default async function SessionPage({
 
   const values = timeline.values[metric];
 
-  const intMetric = metric === "kills" || metric === "fights";
+  const intMetric = metric === "kills" || metric === "killsPve" || metric === "killsPvp" || metric === "fights";
 
   const tips = timeline.labels.map(
     (l, i) =>
@@ -198,7 +211,8 @@ export default async function SessionPage({
       expPerHour !== null ? fmtInt(expPerHour) : "—",
     ],
     ["Poziom", levelText],
-    ["Zabójstwa", fmtInt(kills)],
+    ["Zabójstwa PvE", fmtInt(killsPve)],
+    ["Zabójstwa PvP", fmtInt(killsPvp)],
     ["Walki", fmtInt(fights.length)],
     ["Śmierci", fmtInt(data.deaths.length)],
     [

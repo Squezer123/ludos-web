@@ -123,6 +123,7 @@
 .gs-stat-label { color: var(--gs-mute); font-size: 15px; }
 .gs-stat-icon { position: absolute; top: 20px; right: 22px; color: var(--gs-gold); display: flex; }
 .gs-stat-value { margin-top: 6px; font-size: 36px; font-weight: 700; line-height: 1.1; letter-spacing: 0.01em; }
+.gs-stat-sub { margin-top: 2px; font-size: 13px; color: var(--gs-mute); font-variant-numeric: lining-nums; }
 .gs-delta { display: flex; align-items: center; gap: 5px; margin-top: 6px; font-size: 13px; color: var(--gs-mute); }
 .gs-delta b { font-weight: 500; }
 .gs-delta-down { color: var(--gs-down); }

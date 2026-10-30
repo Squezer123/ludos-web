@@ -68,10 +68,10 @@ function formatEventDate(value: string | Date) {
 }
 
 const METRIC_LABEL: Record<Metric, string> = {
-  xp: "XP", gold: "Złoto", kills: "Zabójstwa", active: "Aktywni gracze",
+  xp: "XP", gold: "Złoto", kills: "Zabójstwa (razem)", killsPve: "Zabójstwa PvE", killsPvp: "Zabójstwa PvP", active: "Aktywni gracze",
 };
 const CHART_UNIT: Record<Metric, string> = {
-  xp: "XP", gold: "g", kills: "zabójstw", active: "graczy",
+  xp: "XP", gold: "g", kills: "zabójstw", killsPve: "zabójstw PvE", killsPvp: "zabójstw PvP", active: "graczy",
 };
 
 function Empty() {
@@ -94,7 +94,7 @@ function RankingTable({
 }: {
   title: string;
   rows: Awaited<ReturnType<typeof getGuildRankings>>;
-  value: "xp" | "kills" | "copper";
+  value: "xp" | "kills" | "killsPve" | "killsPvp" | "copper";
   format: (n: number) => string;
 }) {
   const top = [...rows].sort((a, b) => b[value] - a[value]).slice(0, 5);
@@ -159,7 +159,7 @@ export default async function GuildOverviewPage({ searchParams }: { searchParams
   const maxIndex = chartValues.indexOf(maxValue);
   const bestDay = maxIndex >= 0 ? days[maxIndex] : null;
   const fmtMetric = (value: number) =>
-    `${fmtInt(Math.round(value))}${metric === "gold" ? " g" : metric === "xp" ? " XP" : metric === "kills" ? " zabójstw" : " graczy"}`;
+    `${fmtInt(Math.round(value))}${metric === "gold" ? " g" : metric === "xp" ? " XP" : metric === "kills" ? " zabójstw" : metric === "killsPve" ? " zabójstw PvE" : metric === "killsPvp" ? " zabójstw PvP" : " graczy"}`;
   const dateLabel = (day: string) =>
     new Intl.DateTimeFormat("pl-PL", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" })
       .format(new Date(`${day}T00:00:00Z`));
@@ -188,7 +188,7 @@ export default async function GuildOverviewPage({ searchParams }: { searchParams
         <StatCard label="Aktywni gracze (7d)" icon={<IconUsers size={16} />} value={fmtInt(stats.active.value)} delta={stats.active.delta} spark={stats.active.spark} />
         <StatCard label="Łączne XP" icon={<IconTrendUp size={16} />} value={fmtCompact(stats.xp.value)} delta={stats.xp.delta} spark={stats.xp.spark} />
         <StatCard label="Zarobione złoto" icon={<IconCoins size={16} />} value={`${fmtInt(Math.floor(stats.gold.value / COPPER_PER_GOLD))} g`} delta={stats.gold.delta} spark={stats.gold.spark} />
-        <StatCard label="Zabójstwa" icon={<IconSwords size={16} />} value={fmtCompact(stats.kills.value)} delta={stats.kills.delta} spark={stats.kills.spark} />
+        <StatCard label="Zabójstwa" icon={<IconSwords size={16} />} value={fmtCompact(stats.kills.value)} delta={stats.kills.delta} spark={stats.kills.spark} sub={`PvE ${fmtInt(stats.killsPve.value)} · PvP ${fmtInt(stats.killsPvp.value)}`} />
       </div>
 
       <section className="gs-card gs-chart-card gs-overview-chart">
@@ -205,7 +205,7 @@ export default async function GuildOverviewPage({ searchParams }: { searchParams
           <div><span>Najlepszy dzień</span><strong>{fmtMetric(maxValue)}</strong><small>{bestDay ? dateLabel(bestDay) : "Brak danych"}</small></div>
           <div><span>Dni w zakresie</span><strong>{days.length}</strong><small>{range.preset === "custom" ? "Zakres własny" : `Zakres ${range.preset}`}</small></div>
         </div>
-        <ActivityChart days={days} values={chartValues} unit={CHART_UNIT[metric]} integer={metric === "kills" || metric === "active"} label={METRIC_LABEL[metric]} />
+        <ActivityChart days={days} values={chartValues} unit={CHART_UNIT[metric]} integer={metric === "kills" || metric === "killsPve" || metric === "killsPvp" || metric === "active"} label={METRIC_LABEL[metric]} />
         <div className="gs-chart-legend">
           <span><i className="gs-legend-series" /> Dzienna wartość</span>
           <span><i className="gs-legend-average" /> Średnia: {fmtMetric(avg)}</span>
@@ -284,7 +284,8 @@ export default async function GuildOverviewPage({ searchParams }: { searchParams
       </div>
       <div className="gs-rankings-grid gs-overview-rankings">
         <RankingTable title="Najwięcej zdobytego XP" rows={rankings} value="xp" format={fmtCompact} />
-        <RankingTable title="Najwięcej zabójstw" rows={rankings} value="kills" format={fmtInt} />
+        <RankingTable title="Najwięcej zabójstw PvE" rows={rankings} value="killsPve" format={fmtInt} />
+        <RankingTable title="Najwięcej zabójstw PvP" rows={rankings} value="killsPvp" format={fmtInt} />
         <RankingTable title="Najwięcej zebranego złota" rows={rankings} value="copper" format={(n) => `${fmtInt(Math.floor(n / COPPER_PER_GOLD))} g`} />
       </div>
       <p className="gs-note gs-overview-footnote">Rankingi pokazują wartości łączne z całej historii danych, natomiast wykres i karty statystyk korzystają z wybranego zakresu dat.</p>

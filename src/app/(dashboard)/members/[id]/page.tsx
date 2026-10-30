@@ -14,9 +14,9 @@ type SP = Record<string, string | string[] | undefined>;
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 
 const METRIC_LABEL: Record<PlayerMetric, string> = {
-  xp: "EXP", kills: "Zabójstwa", dmg: "Obrażenia zadane", fights: "Walki",
+  xp: "EXP", kills: "Zabójstwa (razem)", killsPve: "Zabójstwa PvE", killsPvp: "Zabójstwa PvP", dmg: "Obrażenia zadane", fights: "Walki",
 };
-const METRIC_UNIT: Record<PlayerMetric, string> = { xp: "exp", kills: "zabójstw", dmg: "obrażeń", fights: "walk" };
+const METRIC_UNIT: Record<PlayerMetric, string> = { xp: "exp", kills: "zabójstw", killsPve: "zabójstw PvE", killsPvp: "zabójstw PvP", dmg: "obrażeń", fights: "walk" };
 
 const STATE_LABEL: Record<string, string> = { trwa: "trwa", zamknieta: "zamknięta", przerwana: "przerwana" };
 
@@ -71,7 +71,8 @@ export default async function MemberDetailPage({
     ["Czas gry (łącznie)", c.playedSeconds ? fmtDuration(c.playedSeconds) : "—"],
     ["Zdobyte EXP", fmtInt(t.exp)],
     ["EXP / godzinę", expPerHour !== null ? fmtInt(expPerHour) : "—"],
-    ["Zabójstwa", fmtInt(t.kills)],
+    ["Zabójstwa PvE", fmtInt(t.killsPve)],
+    ["Zabójstwa PvP", fmtInt(t.killsPvp)],
     ["Śmierci", fmtInt(t.deaths)],
     ["Walki", fmtInt(t.fights)],
     ["Obrażenia / sek. walki", dps !== null ? fmtInt(dps) : "—"],
@@ -134,7 +135,7 @@ export default async function MemberDetailPage({
       </div>
 
       <section className="gs-card gs-player-card gs-player-table-card"><h2 className="gs-card-title">Sesje ({data.sessions.length})</h2>
-        {data.sessions.length === 0 ? <p className="gs-members-empty">Brak sesji w wybranym zakresie.</p> : <div className="gs-members-table-wrap"><table className="gs-members-table"><thead><tr><th>Nr</th><th>Start</th><th>Czas</th><th>EXP</th><th>EXP / h</th><th>Zabójstwa</th><th>Walki</th><th>Śmierci</th><th>Stan</th></tr></thead><tbody>
+        {data.sessions.length === 0 ? <p className="gs-members-empty">Brak sesji w wybranym zakresie.</p> : <div className="gs-members-table-wrap"><table className="gs-members-table"><thead><tr><th>Nr</th><th>Start</th><th>Czas</th><th>EXP</th><th>EXP / h</th><th>Zab. PvE</th><th>Zab. PvP</th><th>Walki</th><th>Śmierci</th><th>Stan</th></tr></thead><tbody>
           {data.sessions.map((s) => {
             const sec = sessionSeconds(s);
             return <tr key={s.id}>
@@ -143,7 +144,8 @@ export default async function MemberDetailPage({
               <td>{sec > 0 ? fmtDuration(sec) : "—"}</td>
               <td>{fmtInt(s.exp)}</td>
               <td>{sec > 60 ? fmtInt(Math.round(s.exp / (sec / 3600))) : "—"}</td>
-              <td>{fmtInt(s.kills)}</td>
+              <td>{fmtInt(s.killsPve)}</td>
+              <td>{fmtInt(s.killsPvp)}</td>
               <td>{fmtInt(s.fights)}</td>
               <td>{s.deaths}</td>
               <td><span className="gs-session-state" data-state={s.state ?? ""}>{s.state ? STATE_LABEL[s.state] ?? s.state : "—"}</span></td>

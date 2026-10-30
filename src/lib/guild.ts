@@ -6,7 +6,7 @@ import { addDays, eachDay, type ResolvedRange } from "./range";
 // Dni liczymy w Europe/Warsaw. Strefa jest literałem (nie parametrem), bo Postgres musi
 // rozpoznać wyrażenie z SELECT i GROUP BY jako to samo.
 
-export const METRICS = ["xp", "gold", "kills", "active"] as const;
+export const METRICS = ["xp", "gold", "kills", "killsPve", "killsPvp", "active"] as const;
 export type Metric = (typeof METRICS)[number];
 
 const TZ = sql.raw("'Europe/Warsaw'");
@@ -20,6 +20,7 @@ async function rows<T>(q: SQL): Promise<T[]> {
 }
 
 type DayRow = { d: string; v: string | number | null };
+type KillDayRow = { d: string; pve: string | number | null; pvp: string | number | null };
 const toMap = (r: DayRow[]) => new Map(r.map((x) => [x.d, Number(x.v ?? 0)]));
 
 /** Filtr postaci: po gildii, a gdy dane nie mają gildii (addon jej jeszcze nie zapisuje) - wszystkie postacie. */
@@ -60,13 +61,16 @@ export async function getGuildOverview(guild: string | null, range: ResolvedRang
   const { from, to, days: n, prevFrom } = range;
   const span = (alias: string) => sql`${sql.raw(alias)} >= ${lo(prevFrom)} and ${sql.raw(alias)} < ${hi(to)}`;
 
-  const [xp, kills, gold, active, active7, active7Prev] = await Promise.all([
+  const [xp, killRows, gold, active, active7, active7Prev] = await Promise.all([
     rows<DayRow>(sql`
       select ${day(sql`e.ts`)} as d, sum(e.amount) as v
       from exp_gains e join characters c on c.id = e.character_id
       where ${inGuild(guild)} and ${span("e.ts")} group by 1`),
-    rows<DayRow>(sql`
-      select ${day(sql`f.started_at`)} as d, sum(f.kills) as v
+    // PvE / PvP wg flagi `pvp` walki (addon nie zapisuje typu pojedynczego zabójstwa)
+    rows<KillDayRow>(sql`
+      select ${day(sql`f.started_at`)} as d,
+             coalesce(sum(f.kills) filter (where not f.pvp), 0) as pve,
+             coalesce(sum(f.kills) filter (where f.pvp), 0) as pvp
       from fights f join characters c on c.id = f.character_id
       where ${inGuild(guild)} and ${span("f.started_at")} group by 1`),
     // złoto = zebrane z ziemi/potworów (ZLOTO.miedz) + nagrody z questów (QUEST_ODDANY.zloto), w miedzi
@@ -86,8 +90,12 @@ export async function getGuildOverview(guild: string | null, range: ResolvedRang
 
   const all = eachDay(prevFrom, to); // 2n dni: poprzedni okres, potem bieżący
   const fill = (m: Map<string, number>) => all.map((d) => m.get(d) ?? 0);
+  const killsPve = fill(toMap(killRows.map((r) => ({ d: r.d, v: r.pve }))));
+  const killsPvp = fill(toMap(killRows.map((r) => ({ d: r.d, v: r.pvp }))));
   const full: Record<Metric, number[]> = {
-    xp: fill(toMap(xp)), gold: fill(toMap(gold)), kills: fill(toMap(kills)), active: fill(toMap(active)),
+    xp: fill(toMap(xp)), gold: fill(toMap(gold)),
+    kills: killsPve.map((v, i) => v + killsPvp[i]), killsPve, killsPvp,
+    active: fill(toMap(active)),
   };
 
   const cur = (a: number[]) => a.slice(-n);
@@ -99,11 +107,16 @@ export async function getGuildOverview(guild: string | null, range: ResolvedRang
 
   return {
     days: all.slice(-n),
-    series: { xp: cur(full.xp), gold: cur(full.gold), kills: cur(full.kills), active: cur(full.active) },
+    series: {
+      xp: cur(full.xp), gold: cur(full.gold), kills: cur(full.kills),
+      killsPve: cur(full.killsPve), killsPvp: cur(full.killsPvp), active: cur(full.active),
+    },
     stats: {
       xp: total("xp"),
       gold: total("gold"),
       kills: total("kills"),
+      killsPve: total("killsPve"),
+      killsPvp: total("killsPvp"),
       // "aktywni (7d)": unikalni gracze z ostatnich 7 dni zakresu, a nie suma dziennych
       active: { value: active7, prev: active7Prev, delta: delta(active7, active7Prev), spark: cur(full.active) },
     },
@@ -204,6 +217,8 @@ export interface GuildRankingRow {
   level: number | null;
   xp: number;
   kills: number;
+  killsPve: number;
+  killsPvp: number;
   playedSeconds: number;
   copper: number;
 }
@@ -214,7 +229,9 @@ export async function getGuildRankings(guild: string | null): Promise<GuildRanki
     select
       c.id, c.name, c.class, c.level,
       coalesce(x.total, 0)::bigint as xp,
-      coalesce(k.total, 0)::bigint as kills,
+      coalesce(k.pve, 0)::bigint + coalesce(k.pvp, 0)::bigint as kills,
+      coalesce(k.pve, 0)::bigint as "killsPve",
+      coalesce(k.pvp, 0)::bigint as "killsPvp",
       coalesce(c.played_seconds, 0)::bigint as "playedSeconds",
       coalesce(g.total, 0)::bigint as copper
     from characters c
@@ -223,7 +240,9 @@ export async function getGuildRankings(guild: string | null): Promise<GuildRanki
       from exp_gains group by character_id
     ) x on x.character_id = c.id
     left join (
-      select character_id, sum(kills) as total
+      select character_id,
+             sum(kills) filter (where not pvp) as pve,
+             sum(kills) filter (where pvp) as pvp
       from fights group by character_id
     ) k on k.character_id = c.id
     left join (
@@ -238,7 +257,7 @@ export async function getGuildRankings(guild: string | null): Promise<GuildRanki
   `).then((result) => result.map((r) => ({
     ...r,
     id: Number(r.id), level: r.level == null ? null : Number(r.level),
-    xp: Number(r.xp), kills: Number(r.kills), playedSeconds: Number(r.playedSeconds), copper: Number(r.copper),
+    xp: Number(r.xp), kills: Number(r.kills), killsPve: Number(r.killsPve), killsPvp: Number(r.killsPvp), playedSeconds: Number(r.playedSeconds), copper: Number(r.copper),
   })));
 }
 

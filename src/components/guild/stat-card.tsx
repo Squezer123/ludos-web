@@ -20,14 +20,15 @@ function Sparkline({ values }: { values: number[] }) {
 }
 
 export function StatCard({
-  label, icon, value, delta, spark,
-}: { label: string; icon: ReactNode; value: string; delta: number | null; spark: number[] }) {
+  label, icon, value, delta, spark, sub,
+}: { label: string; icon: ReactNode; value: string; delta: number | null; spark: number[]; sub?: string }) {
   const dir = delta === null || delta === 0 ? "flat" : delta < 0 ? "down" : "up";
   return (
     <section className="gs-card gs-stat">
       <div className="gs-stat-label">{label}</div>
       <span className="gs-stat-icon">{icon}</span>
       <div className="gs-stat-value">{value}</div>
+      {sub ? <div className="gs-stat-sub">{sub}</div> : null}
       <div className={`gs-delta gs-delta-${dir}`}>
         {delta === null ? (
           <span>brak danych z poprz. okresu</span>

@@ -77,7 +77,8 @@ export default async function SectionPage({ params }: { params: Promise<{ sectio
     const rankings = [
       { key: "level", title: "Poziom", value: (r: typeof rows[number]) => r.level ?? 0, format: (v: number) => fmtInt(v), empty: "Brak danych o poziomach." },
       { key: "xp", title: "Zdobyte doświadczenie", value: (r: typeof rows[number]) => r.xp, format: (v: number) => `${fmtInt(v)} XP`, empty: "Brak danych o doświadczeniu." },
-      { key: "kills", title: "Zabójstwa", value: (r: typeof rows[number]) => r.kills, format: (v: number) => fmtInt(v), empty: "Brak zarejestrowanych zabójstw." },
+      { key: "killsPve", title: "Zabójstwa PvE", value: (r: typeof rows[number]) => r.killsPve, format: (v: number) => fmtInt(v), empty: "Brak zarejestrowanych zabójstw PvE." },
+      { key: "killsPvp", title: "Zabójstwa PvP", value: (r: typeof rows[number]) => r.killsPvp, format: (v: number) => fmtInt(v), empty: "Brak zarejestrowanych zabójstw PvP." },
       { key: "played", title: "Czas gry", value: (r: typeof rows[number]) => r.playedSeconds, format: (v: number) => fmtDuration(v), empty: "Brak danych o czasie gry." },
       { key: "gold", title: "Zebrane złoto", value: (r: typeof rows[number]) => r.copper, format: (v: number) => fmtMoney(v), empty: "Brak danych o zebranym złocie." },
     ];

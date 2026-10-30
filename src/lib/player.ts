@@ -8,7 +8,7 @@ import { addDays, diffDays, eachDay, MAX_SPAN_DAYS, todayWarsaw, type ResolvedRa
 // rozkład godzinowy oraz szczegóły pojedynczej sesji. Dni i godziny liczymy w Europe/Warsaw.
 // Strefa jest literałem (nie parametrem), bo Postgres musi uznać wyrażenie z SELECT i GROUP BY za to samo.
 
-export const PLAYER_METRICS = ["xp", "kills", "dmg", "fights"] as const;
+export const PLAYER_METRICS = ["xp", "kills", "killsPve", "killsPvp", "dmg", "fights"] as const;
 export type PlayerMetric = (typeof PLAYER_METRICS)[number];
 
 export type DayRange = Pick<ResolvedRange, "from" | "to">;
@@ -48,6 +48,8 @@ export interface SessionRow {
   reloads: number;
   exp: number;
   kills: number;
+  killsPve: number;
+  killsPvp: number;
   fights: number;
   dmg: number;
   deaths: number;
@@ -78,6 +80,8 @@ export interface PlayerReport {
     exp: number;
     fights: number;
     kills: number;
+    killsPve: number;
+    killsPvp: number;
     fightSeconds: number;
     dmgDone: number;
     dmgTaken: number;
@@ -153,6 +157,7 @@ export async function getPlayerReport(id: number, range: DayRange | null): Promi
   const [
     xpDay, killsDay, dmgDay, fightsDay,
     xpHour, killsHour, dmgHour, fightsHour,
+    killsPveDay, killsPvpDay, killsPveHour, killsPvpHour,
     expAgg, fightAgg, deathCount, gold, lastGold,
     expBySource, topMobs, zones, expCurve, sessionRows, deathRows, lootRows, questRows,
   ] = await Promise.all([
@@ -174,10 +179,22 @@ export async function getPlayerReport(id: number, range: DayRange | null): Promi
     rows<H>(sql`select ${hourOf(sql`f.started_at`)} as h, count(*) as v from fights f
                 where f.character_id = ${cid} and ${within("f.started_at", range)} group by 1`),
 
+    rows<D>(sql`select ${dayOf(sql`f.started_at`)} as d, sum(f.kills) as v from fights f
+                where f.character_id = ${cid} and not f.pvp and ${within("f.started_at", cr)} group by 1`),
+    rows<D>(sql`select ${dayOf(sql`f.started_at`)} as d, sum(f.kills) as v from fights f
+                where f.character_id = ${cid} and f.pvp and ${within("f.started_at", cr)} group by 1`),
+    rows<H>(sql`select ${hourOf(sql`f.started_at`)} as h, sum(f.kills) as v from fights f
+                where f.character_id = ${cid} and not f.pvp and ${within("f.started_at", range)} group by 1`),
+    rows<H>(sql`select ${hourOf(sql`f.started_at`)} as h, sum(f.kills) as v from fights f
+                where f.character_id = ${cid} and f.pvp and ${within("f.started_at", range)} group by 1`),
+
     rows<{ total: string | number }>(sql`select coalesce(sum(e.amount), 0) as total from exp_gains e
                 where e.character_id = ${cid} and ${within("e.ts", range)}`),
     rows<Record<string, string | number>>(sql`
-      select count(*) as fights, coalesce(sum(f.kills), 0) as kills, coalesce(sum(f.seconds), 0) as seconds,
+      select count(*) as fights, coalesce(sum(f.kills), 0) as kills,
+             coalesce(sum(f.kills) filter (where not f.pvp), 0) as kills_pve,
+             coalesce(sum(f.kills) filter (where f.pvp), 0) as kills_pvp,
+             coalesce(sum(f.seconds), 0) as seconds,
              coalesce(sum(f.dmg_done), 0) as dmg_done, coalesce(sum(f.dmg_taken), 0) as dmg_taken,
              coalesce(sum(f.heal_done), 0) as heal_done, coalesce(sum(f.heal_taken), 0) as heal_taken
       from fights f where f.character_id = ${cid} and ${within("f.started_at", range)}`),
@@ -203,12 +220,15 @@ export async function getPlayerReport(id: number, range: DayRange | null): Promi
     rows<Record<string, unknown>>(sql`
       select s.id, s.nr, s.started_at, s.ended_at, s.state, s.reloads,
              (select max(x.ts) from events x where x.session_id = s.id) as last_ts,
-             coalesce(xp.v, 0) as exp, coalesce(fi.kills, 0) as kills, coalesce(fi.n, 0) as fights,
+             coalesce(xp.v, 0) as exp, coalesce(fi.kills, 0) as kills,
+             coalesce(fi.kills_pve, 0) as kills_pve, coalesce(fi.kills_pvp, 0) as kills_pvp, coalesce(fi.n, 0) as fights,
              coalesce(fi.dmg, 0) as dmg, coalesce(de.c, 0) as deaths
       from sessions s
       left join (select ev.session_id, sum(e.amount) as v from exp_gains e join events ev on ev.id = e.event_id
                  where e.character_id = ${cid} group by 1) xp on xp.session_id = s.id
-      left join (select ev.session_id, sum(f.kills) as kills, count(*) as n, sum(f.dmg_done) as dmg
+      left join (select ev.session_id, sum(f.kills) as kills,
+                        sum(f.kills) filter (where not f.pvp) as kills_pve, sum(f.kills) filter (where f.pvp) as kills_pvp,
+                        count(*) as n, sum(f.dmg_done) as dmg
                  from fights f join events ev on ev.id = f.event_id
                  where f.character_id = ${cid} group by 1) fi on fi.session_id = s.id
       left join (select ev.session_id, count(*) as c from deaths d join events ev on ev.id = d.event_id
@@ -232,18 +252,18 @@ export async function getPlayerReport(id: number, range: DayRange | null): Promi
   const sessionList: SessionRow[] = sessionRows.map((s) => ({
     id: n(s.id), nr: n(s.nr), startedAt: dt(s.started_at), endedAt: dt(s.ended_at), lastTs: dt(s.last_ts),
     state: (s.state as string | null) ?? null, reloads: n(s.reloads),
-    exp: n(s.exp), kills: n(s.kills), fights: n(s.fights), dmg: n(s.dmg), deaths: n(s.deaths),
+    exp: n(s.exp), kills: n(s.kills), killsPve: n(s.kills_pve), killsPvp: n(s.kills_pvp), fights: n(s.fights), dmg: n(s.dmg), deaths: n(s.deaths),
   }));
 
   return {
     character,
     chartDays,
     chartTruncated: truncated,
-    daily: { xp: fillDays(toDay(xpDay)), kills: fillDays(toDay(killsDay)), dmg: fillDays(toDay(dmgDay)), fights: fillDays(toDay(fightsDay)) },
-    hourly: { xp: toHours(xpHour), kills: toHours(killsHour), dmg: toHours(dmgHour), fights: toHours(fightsHour) },
+    daily: { xp: fillDays(toDay(xpDay)), kills: fillDays(toDay(killsDay)), killsPve: fillDays(toDay(killsPveDay)), killsPvp: fillDays(toDay(killsPvpDay)), dmg: fillDays(toDay(dmgDay)), fights: fillDays(toDay(fightsDay)) },
+    hourly: { xp: toHours(xpHour), kills: toHours(killsHour), killsPve: toHours(killsPveHour), killsPvp: toHours(killsPvpHour), dmg: toHours(dmgHour), fights: toHours(fightsHour) },
     totals: {
       exp: n(expAgg[0]?.total),
-      fights: n(f.fights), kills: n(f.kills), fightSeconds: n(f.seconds),
+      fights: n(f.fights), kills: n(f.kills), killsPve: n(f.kills_pve), killsPvp: n(f.kills_pvp), fightSeconds: n(f.seconds),
       dmgDone: n(f.dmg_done), dmgTaken: n(f.dmg_taken), healDone: n(f.heal_done), healTaken: n(f.heal_taken),
       deaths: n(deathCount[0]?.c),
       sessionSeconds: sessionList.reduce((a, s) => a + sessionSeconds(s), 0),
