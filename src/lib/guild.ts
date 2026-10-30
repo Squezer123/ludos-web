@@ -241,3 +241,46 @@ export async function getGuildRankings(guild: string | null): Promise<GuildRanki
     xp: Number(r.xp), kills: Number(r.kills), playedSeconds: Number(r.playedSeconds), copper: Number(r.copper),
   })));
 }
+
+export interface GuildProfessionRankingRow {
+  id: number;
+  name: string;
+  class: string | null;
+  profession: string;
+  level: number;
+  maxLevel: number | null;
+}
+
+// Nazwy profesji obsługiwanych w klasycznym WoW; pomijamy umiejętności broni,
+// obronę, zaklęcia i inne wpisy UMIEJETNOSC, które nie są profesjami.
+const PROFESSION_NAMES = [
+  "Alchemy", "Blacksmithing", "Enchanting", "Engineering", "Herbalism",
+  "Leatherworking", "Mining", "Skinning", "Tailoring", "Cooking",
+  "First Aid", "Fishing",
+  "Alchemia", "Kowalstwo", "Zaklinanie", "Inżynieria", "Zielarstwo",
+  "Kaletnictwo", "Górnictwo", "Garbarstwo", "Krawiectwo", "Gotowanie",
+  "Pierwsza pomoc", "Wędkarstwo",
+];
+
+/** Ostatni zarejestrowany poziom profesji każdej postaci w wybranej gildii. */
+export async function getGuildProfessionRankings(guild: string | null): Promise<GuildProfessionRankingRow[]> {
+  const names = sql.join(PROFESSION_NAMES.map((name) => sql`${name}`), sql`, `);
+  return rows<GuildProfessionRankingRow>(sql`
+    select distinct on (e.character_id, e.data->>'nazwa')
+      c.id, c.name, c.class,
+      e.data->>'nazwa' as profession,
+      coalesce(nullif(e.data->>'na', '')::integer, 0) as level,
+      nullif(e.data->>'max', '')::integer as "maxLevel"
+    from events e
+    join characters c on c.id = e.character_id
+    where ${inGuild(guild)}
+      and e.type = 'UMIEJETNOSC'
+      and e.data->>'nazwa' in (${names})
+    order by e.character_id, e.data->>'nazwa', e.ts desc, e.id desc
+  `).then((result) => result.map((r) => ({
+    ...r,
+    id: Number(r.id),
+    level: Number(r.level ?? 0),
+    maxLevel: r.maxLevel == null ? null : Number(r.maxLevel),
+  })));
+}

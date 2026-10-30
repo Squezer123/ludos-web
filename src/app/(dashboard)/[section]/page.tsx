@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getGuildRankings, hasCharacters, listMembers, resolveGuild } from "../../../lib/guild";
+import { getGuildProfessionRankings, getGuildRankings, hasCharacters, listMembers, resolveGuild } from "../../../lib/guild";
+import ProfessionRanking from "../ProfessionRanking";
 import { fmtDuration, fmtInt, fmtMoney } from "../../../lib/format";
 
 const SECTIONS: Record<string, string> = {
@@ -68,7 +69,11 @@ export default async function SectionPage({ params }: { params: Promise<{ sectio
 
   if (section === "rankings") {
     const guild = await resolveGuild();
-    const rows = await getGuildRankings(guild.filter);
+    const [rows, professionRows] = await Promise.all([
+      getGuildRankings(guild.filter),
+      getGuildProfessionRankings(guild.filter),
+    ]);
+    const professions = [...new Set(professionRows.map((row) => row.profession))].sort((a, b) => a.localeCompare(b, "pl"));
     const rankings = [
       { key: "level", title: "Poziom", value: (r: typeof rows[number]) => r.level ?? 0, format: (v: number) => fmtInt(v), empty: "Brak danych o poziomach." },
       { key: "xp", title: "Zdobyte doświadczenie", value: (r: typeof rows[number]) => r.xp, format: (v: number) => `${fmtInt(v)} XP`, empty: "Brak danych o doświadczeniu." },
@@ -107,6 +112,7 @@ export default async function SectionPage({ params }: { params: Promise<{ sectio
             })}
           </div>
         )}
+        <ProfessionRanking professions={professions} rows={professionRows} />
       </>
     );
   }

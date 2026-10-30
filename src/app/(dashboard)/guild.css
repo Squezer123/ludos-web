@@ -269,3 +269,9 @@
 .gs-rank-value { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
 @media (max-width: 900px) { .gs-rankings-grid { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 599px) { .gs-ranking-card { padding: 14px; } .gs-ranking-head .gs-card-title { font-size: 17px; } }
+
+.gs-profession-ranking { margin-top: 18px; max-width: 100%; }
+.gs-profession-note { color: var(--gs-mute); font-size: 12px; margin: 4px 0 0; }
+.gs-profession-select-label { display: block; color: var(--gs-mute); font-size: 12px; font-weight: 600; margin: 14px 0 6px; }
+.gs-profession-select { appearance: none; width: min(100%, 360px); min-height: 42px; border: 1px solid var(--gs-line); border-radius: 9px; padding: 0 38px 0 12px; color: var(--gs-ink); background: var(--gs-card); font: inherit; cursor: pointer; }
+.gs-profession-select:focus-visible { outline: 2px solid var(--gs-gold); outline-offset: 2px; }
