@@ -296,3 +296,58 @@
 .gs-path time { color: var(--gs-mute); font-variant-numeric: tabular-nums; font-size: 12px; }
 .gs-path span:last-child { color: var(--gs-mute); font-variant-numeric: tabular-nums; font-size: 13px; }
 .gs-path small { color: var(--gs-mute); display: block; font-size: 12px; }
+/* Rozbudowany przeglÄd gildii */
+.gs-overview-heading { display:flex; align-items:flex-end; justify-content:space-between; gap:18px; margin-bottom:20px; }
+.gs-overview-heading .gs-sub { margin-bottom:0; }
+.gs-eyebrow { margin:0 0 5px; color:var(--gs-gold); font-size:10px; font-weight:700; letter-spacing:.17em; }
+.gs-overview-badge { display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border:1px solid var(--gs-line); border-radius:999px; color:var(--gs-mute); font-size:12px; white-space:nowrap; }
+.gs-overview-badge span { width:7px; height:7px; border-radius:50%; background:var(--gs-up); box-shadow:0 0 12px color-mix(in srgb, var(--gs-up) 55%, transparent); }
+.gs-overview-stats { grid-template-columns:repeat(4,minmax(0,1fr)); }
+.gs-overview-chart { margin-top:20px; }
+.gs-overview-chart .gs-chart-head { align-items:flex-end; }
+.gs-overview-chart .gs-card-title { margin:0; }
+.gs-chart-summary { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin:18px 0 8px; }
+.gs-chart-summary > div { display:grid; gap:4px; padding:12px 14px; border:1px solid var(--gs-line); border-radius:11px; background:rgba(255,255,255,.018); }
+.gs-chart-summary span,.gs-chart-summary small { color:var(--gs-mute); font-size:11px; }
+.gs-chart-summary strong { font-family:var(--font-cormorant),Georgia,serif; font-size:24px; line-height:1.1; font-variant-numeric:tabular-nums; }
+.gs-chart-summary small { font-size:10px; }
+.gs-chart .gs-average-line { stroke:var(--gs-ink); stroke-width:1.5; stroke-dasharray:7 5; opacity:.72; pointer-events:none; }
+.gs-chart .gs-average-label-bg { fill:var(--gs-raise); stroke:var(--gs-line); stroke-width:1; pointer-events:none; }
+.gs-chart .gs-average-label { fill:var(--gs-ink); font-size:10px; font-family:var(--font-inter),system-ui,sans-serif; pointer-events:none; }
+.gs-chart-legend { display:flex; flex-wrap:wrap; gap:10px 20px; color:var(--gs-mute); font-size:12px; margin-top:2px; }
+.gs-chart-legend span { display:inline-flex; align-items:center; gap:7px; }
+.gs-legend-series { display:inline-block; width:18px; height:3px; border-radius:2px; background:var(--gs-gold); }
+.gs-legend-average { display:inline-block; width:18px; border-top:2px dashed var(--gs-ink); opacity:.75; }
+.gs-overview-insights { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; margin-top:18px; }
+.gs-insight-card { padding:18px 20px; min-width:0; }
+.gs-insight-kicker { display:block; color:var(--gs-mute); font-size:10px; font-weight:700; letter-spacing:.13em; }
+.gs-insight-card strong { display:block; margin-top:7px; font-family:var(--font-cormorant),Georgia,serif; font-size:29px; line-height:1.1; overflow-wrap:anywhere; }
+.gs-insight-card p { margin:8px 0 0; color:var(--gs-mute); font-size:12px; }
+.gs-overview-grid-wide { grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr); }
+.gs-section-heading,.gs-overview-section-head { display:flex; align-items:center; justify-content:space-between; gap:14px; }
+.gs-section-heading { margin-bottom:12px; }
+.gs-section-heading .gs-card-title { margin:0; }
+.gs-overview-section-head { margin-top:28px; align-items:flex-end; }
+.gs-overview-section-head .gs-card-title { margin:0; }
+.gs-overview-section-head .gs-members-sub { margin:0; text-align:right; }
+.gs-overview-rankings { margin-top:14px; }
+.gs-overview-footnote { margin-top:12px; }
+@media(max-width:1100px) {
+  .gs-overview-stats { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .gs-overview-grid-wide { grid-template-columns:minmax(0,1fr); }
+}
+@media(max-width:700px) {
+  .gs-overview-heading { align-items:flex-start; flex-direction:column; }
+  .gs-overview-badge { display:none; }
+  .gs-chart-summary { grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
+  .gs-chart-summary > div { padding:10px 8px; }
+  .gs-chart-summary strong { font-size:19px; }
+  .gs-overview-insights { grid-template-columns:minmax(0,1fr); gap:9px; }
+  .gs-insight-card { padding:14px 16px; }
+  .gs-overview-section-head { align-items:flex-start; flex-direction:column; }
+  .gs-overview-section-head .gs-members-sub { text-align:left; }
+}
+@media(max-width:480px) {
+  .gs-overview-stats { grid-template-columns:minmax(0,1fr); }
+  .gs-chart-summary { grid-template-columns:minmax(0,1fr); }
+}
