@@ -201,3 +201,30 @@ main > .panel { margin-top: 16px; }
   .hm-zone-last { display:none; }
   .hm-zone-title { flex-direction:column; gap:2px; }
 }
+
+/* Ekran ładowania Heatmapy Azeroth */
+.hm-loading-page { min-height:70vh; padding:20px 0 32px; }
+.hm-loading-hero { display:flex; flex-direction:column; align-items:center; text-align:center; padding:34px 16px 28px; }
+.hm-loading-emblem { width:72px; height:72px; position:relative; display:grid; place-items:center; margin-bottom:17px; }
+.hm-loading-ring { position:absolute; inset:2px; border:2px solid rgba(232,193,108,.2); border-top-color:#e8c16c; border-right-color:#b98636; border-radius:50%; animation:hm-loading-spin 1.15s linear infinite; }
+.hm-loading-core { display:grid; place-items:center; width:42px; height:42px; border:1px solid rgba(232,193,108,.35); border-radius:50%; color:#f2d68d; font-size:25px; text-shadow:0 0 15px rgba(232,193,108,.65); animation:hm-loading-pulse 1.7s ease-in-out infinite; }
+.hm-loading-eyebrow { margin:0 0 8px; color:#c7a55a; font-size:10px; letter-spacing:.24em; font-weight:800; }
+.hm-loading-hero h1 { margin:0; color:#e8c16c; font-size:clamp(23px,4vw,34px); letter-spacing:.015em; }
+.hm-loading-message { margin:10px 0 18px; color:var(--hm-muted); font-size:14px; }
+.hm-loading-progress { width:min(280px,75vw); height:4px; overflow:hidden; border-radius:10px; background:#30261b; }
+.hm-loading-progress span { display:block; width:38%; height:100%; border-radius:10px; background:linear-gradient(90deg,#98702c,#f2d68d,#98702c); animation:hm-loading-progress 1.45s ease-in-out infinite; }
+.hm-loading-hint { margin-top:10px; color:#82745d; font-size:11px; }
+.hm-loading-skeleton { opacity:.62; }
+.hm-loading-filters { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; padding:16px; background:var(--hm-card); border:1px solid var(--hm-line); border-radius:13px; }
+.hm-loading-filters span { height:39px; border-radius:7px; background:linear-gradient(90deg,#211a12 20%,#34291b 50%,#211a12 80%); background-size:200% 100%; animation:hm-loading-shimmer 1.8s ease-in-out infinite; }
+.hm-loading-continents { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-top:14px; }
+.hm-loading-continents span { height:95px; border:1px solid var(--hm-line); border-radius:12px; background:linear-gradient(90deg,#1a1510 20%,#292015 50%,#1a1510 80%); background-size:200% 100%; animation:hm-loading-shimmer 1.8s ease-in-out infinite; }
+.hm-loading-panel { display:grid; gap:13px; margin-top:14px; padding:18px; background:var(--hm-card); border:1px solid var(--hm-line); border-radius:13px; }
+.hm-loading-title { width:190px; height:20px; margin-bottom:4px; border-radius:5px; background:#34291b; }
+.hm-loading-row { height:34px; border-top:1px solid var(--hm-line); background:linear-gradient(90deg,transparent,#292015 50%,transparent); background-size:200% 100%; animation:hm-loading-shimmer 1.8s ease-in-out infinite; }
+@keyframes hm-loading-spin { to { transform:rotate(360deg); } }
+@keyframes hm-loading-pulse { 50% { transform:scale(.88); opacity:.65; } }
+@keyframes hm-loading-progress { 0% { transform:translateX(-120%); } 100% { transform:translateX(380%); } }
+@keyframes hm-loading-shimmer { to { background-position:-200% 0; } }
+@media (max-width:700px) { .hm-loading-filters { grid-template-columns:repeat(2,minmax(0,1fr)); } .hm-loading-continents { grid-template-columns:repeat(2,minmax(0,1fr)); } .hm-loading-continents span { height:82px; } }
+@media (prefers-reduced-motion:reduce) { .hm-loading-ring,.hm-loading-core,.hm-loading-progress span,.hm-loading-filters span,.hm-loading-continents span,.hm-loading-row { animation:none; } }
