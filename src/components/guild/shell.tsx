@@ -4,13 +4,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Suspense, useEffect, useState, type ReactNode } from "react";
 import { fmtAgo } from "../../lib/guild-format";
-import { IconDashboard, IconPanel, IconSettings, IconSwords, IconSync, IconTrophy, IconUsers } from "./icons";
+import { IconDashboard, IconPanel, IconSettings, IconSwords, IconSync, IconTrophy, IconTrendUp, IconUsers } from "./icons";
 import { RangeControls } from "./range-controls";
 
 const NAV = [
   { slug: "", label: "Przegląd", Icon: IconDashboard },
   { slug: "members", label: "Członkowie", Icon: IconUsers },
   { slug: "rankings", label: "Rankingi", Icon: IconTrophy },
+  { slug: "heatmap", label: "Heatmapa Azeroth", Icon: IconTrendUp },
   { slug: "crafterzy", label: "Crafterzy", Icon: IconTrophy },
   { slug: "settings", label: "Ustawienia", Icon: IconSettings },
 ] as const;
