@@ -17,15 +17,36 @@ export function UploadForm({ tokenRequired }: { tokenRequired: boolean }) {
     setBusy(true);
     setResult(null);
     try {
-      const body = new FormData();
-      body.set("file", file);
-      if (token) body.set("token", token);
-      const res = await fetch("/api/import", { method: "POST", body });
+      // Kompresja gzip znacznie zmniejsza pliki SavedVariables i pozwala
+      // zmieścić się w limicie wielkości żądania platformy hostingowej.
+      if (typeof CompressionStream === "undefined") {
+        throw new Error("Ta przeglądarka nie obsługuje kompresji plików. Otwórz stronę w aktualnej wersji Chrome, Edge lub Firefox.");
+      }
+      const compressed = await new Response(
+        file.stream().pipeThrough(new CompressionStream("gzip")),
+      ).blob();
+
+      if (compressed.size > 4 * 1024 * 1024) {
+        throw new Error("Po kompresji plik nadal przekracza limit Vercel (około 4 MB). Dla tak dużych plików trzeba wdrożyć import porcjowany.");
+      }
+
+      const headers: Record<string, string> = {
+        "Content-Type": "application/gzip",
+        "X-Ludos-Compressed": "gzip",
+        "X-Ludos-Filename": encodeURIComponent(file.name),
+      };
+      if (token) headers["X-Upload-Token"] = token;
+
+      const res = await fetch("/api/import", {
+        method: "POST",
+        headers,
+        body: compressed,
+      });
       const json = (await res.json()) as Result;
       setResult(res.ok ? json : { ok: false, error: (json as { error?: string }).error ?? "Import nie powiódł się." });
       if (res.ok) router.refresh();
-    } catch {
-      setResult({ ok: false, error: "Nie udało się połączyć z serwerem." });
+    } catch (error) {
+      setResult({ ok: false, error: error instanceof Error ? error.message : "Nie udało się połączyć z serwerem." });
     } finally {
       setBusy(false);
       if (input.current) input.current.value = "";
@@ -46,7 +67,7 @@ export function UploadForm({ tokenRequired }: { tokenRequired: boolean }) {
         }}
       >
         <p><strong>Wgraj plik LUDOS-on.lua</strong></p>
-        <p className="muted">Przeciągnij tutaj albo wybierz z dysku. Ten sam plik możesz wgrać wiele razy, dane się nie zdublują.</p>
+        <p className="muted">Przeciągnij tutaj albo wybierz z dysku. Plik jest automatycznie kompresowany przed wysłaniem. Ten sam plik możesz wgrać wiele razy, dane się nie zdublują.</p>
         <input
           ref={input}
           type="file"
