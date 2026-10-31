@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { UploadForm } from "../../components/upload-form";
+import { ResetDataButton } from "../../components/reset-data-button";
 import { classInfo, fmtDateTime, fmtDuration, fmtInt } from "../../lib/format";
 import { listCharacters } from "../../lib/queries";
 
@@ -19,6 +20,12 @@ export default async function Home() {
 
       <section className="panel">
         <UploadForm tokenRequired={Boolean(process.env.UPLOAD_TOKEN)} />
+      </section>
+
+      <section className="panel" style={{ marginTop: 16, borderColor: "rgba(180, 35, 24, 0.45)" }}>
+        <h2>Strefa niebezpieczna</h2>
+        <p className="muted">Usuwa wszystkie postacie, sesje, statystyki, zdarzenia oraz historię importów z bazy danych. Operacja jest nieodwracalna.</p>
+        <ResetDataButton />
       </section>
 
       {chars.length === 0 ? (
