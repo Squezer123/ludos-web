@@ -95,9 +95,7 @@ export default async function SessionPage({
   const durationSec = Math.max(0, (data.endMs - data.startMs) / 1000);
   const expTotal = data.exp.reduce((a, r) => a + r.amount, 0);
 
-  // Wyodrębnienie tablicy zapobiega błędowi TypeScript:
-  // "'data' is possibly 'null'" w typie parametru funkcji.
-  const fights = data.fights;
+      const fights = data.fights;
 
   const sum = (pick: (f: (typeof fights)[number]) => number) =>
     fights.reduce((a, f) => a + pick(f), 0);
