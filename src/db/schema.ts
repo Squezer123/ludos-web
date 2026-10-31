@@ -2,6 +2,7 @@ import {
   bigint,
   bigserial,
   boolean,
+  customType,
   index,
   integer,
   jsonb,
@@ -149,3 +150,18 @@ export const imports = pgTable("imports", {
   eventsTotal: integer("events_total").notNull().default(0),
   eventsNew: integer("events_new").notNull().default(0),
 });
+
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({ dataType: () => "bytea" });
+
+export const importUploadChunks = pgTable(
+  "import_upload_chunks",
+  {
+    uploadId: text("upload_id").notNull(),
+    chunkIndex: integer("chunk_index").notNull(),
+    totalChunks: integer("total_chunks").notNull(),
+    filename: text("filename").notNull(),
+    data: bytea("data").notNull(),
+    createdAt: tstz("created_at").notNull().defaultNow(),
+  },
+  (t) => [unique("import_upload_chunks_upload_index").on(t.uploadId, t.chunkIndex)],
+);

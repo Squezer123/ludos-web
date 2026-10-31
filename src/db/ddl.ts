@@ -92,4 +92,14 @@ export const DDL: string[] = [
     events_total integer NOT NULL DEFAULT 0,
     events_new integer NOT NULL DEFAULT 0
   )`,
+  `CREATE TABLE IF NOT EXISTS import_upload_chunks (
+    upload_id text NOT NULL,
+    chunk_index integer NOT NULL,
+    total_chunks integer NOT NULL,
+    filename text NOT NULL,
+    data bytea NOT NULL,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    CONSTRAINT import_upload_chunks_upload_index UNIQUE (upload_id, chunk_index)
+  )`,
+  `CREATE INDEX IF NOT EXISTS import_upload_chunks_created_at ON import_upload_chunks (created_at)`,
 ];
