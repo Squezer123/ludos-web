@@ -19,6 +19,12 @@ export default async function Home() {
       <p className="sub">Wgrywanie danych z addona LUDOS-on i podgląd postaci. Dostęp ograniczony do zalogowanego administratora.</p>
 
       <section className="panel" style={{ marginTop: 16 }}>
+        <h2>Heatmapa Azeroth</h2>
+        <p className="muted">Sprawdź aktywność zapisaną w strefach, filtrując wyniki po dacie, godzinach i postaci.</p>
+        <Link href="/admin/heatmap" className="who">Otwórz heatmapę →</Link>
+      </section>
+
+      <section className="panel" style={{ marginTop: 16 }}>
         <h2>Raport PDF</h2>
         <p className="muted">Przygotuj raport ze statystykami i zestawieniem wszystkich postaci. Możesz go wydrukować lub zapisać jako plik PDF.</p>
         <Link href="/admin/report" className="who">Otwórz raport →</Link>
