@@ -56,8 +56,17 @@ export async function importSavedVariables(text: string, label?: string | null):
       const all = perSession.flatMap((p) => p.evs);
       const level = maxLevel(all);
       const played = maxPlayed(all);
-      const firstSeen = all.length ? new Date(Math.min(...all.map((e) => e.ts.getTime()))) : null;
-      const lastSeen = all.length ? new Date(Math.max(...all.map((e) => e.ts.getTime()))) : null;
+      // Nie używaj Math.min(...dużaTablica) / Math.max(...dużaTablica):
+      // przy setkach tysięcy zdarzeń przekracza to limit argumentów/stosu V8.
+      let minTimestamp = Infinity;
+      let maxTimestamp = -Infinity;
+      for (const event of all) {
+        const timestamp = event.ts.getTime();
+        if (timestamp < minTimestamp) minTimestamp = timestamp;
+        if (timestamp > maxTimestamp) maxTimestamp = timestamp;
+      }
+      const firstSeen = all.length ? new Date(minTimestamp) : null;
+      const lastSeen = all.length ? new Date(maxTimestamp) : null;
 
       const [row] = await tx
         .insert(characters)
