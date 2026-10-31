@@ -375,7 +375,7 @@ export async function getSessionDetail(characterId: number, nr: number): Promise
   for (const e of evRows) {
     const d = asObj(e.data);
     if (e.type === "AWANS") { const l = int(d.lvl); if (l !== null) levelUps.push({ ts: e.ts, level: l }); }
-    else if (e.type === "LOOT" && d.ja === true) loot.push({ ts: e.ts, name: str(d.nazwa) ?? "?", qty: int(d.ile) ?? 1, quality: int(d.jakosc) ?? 1 });
+    else if (e.type === "LOOT" && d.ja === true) loot.push({ ts: e.ts, itemId: int(d.id), name: str(d.nazwa) ?? "?", qty: int(d.ile) ?? 1, quality: int(d.jakosc) ?? 1 });
     else if (e.type === "QUEST_ODDANY") {
       const c = int(d.zloto) ?? 0;
       copper += c;
