@@ -7,6 +7,7 @@ import { fmtDuration, fmtInt, fmtMoney } from "../../../lib/format";
 const SECTIONS: Record<string, string> = {
   members: "Członkowie",
   rankings: "Rankingi",
+  crafterzy: "Crafterzy",
   settings: "Ustawienia",
 };
 
@@ -63,6 +64,19 @@ export default async function SectionPage({ params }: { params: Promise<{ sectio
             </div>
           )}
         </section>
+      </>
+    );
+  }
+
+  if (section === "crafterzy") {
+    const guild = await resolveGuild();
+    const professionRows = await getGuildProfessionRankings(guild.filter);
+    const professions = [...new Set(professionRows.map((row) => row.profession))].sort((a, b) => a.localeCompare(b, "pl"));
+    return (
+      <>
+        <h1 className="gs-title">Crafterzy</h1>
+        <p className="gs-sub">Wybierz profesję, aby zobaczyć nicki postaci i ich aktualny poziom profesji.</p>
+        <ProfessionRanking professions={professions} rows={professionRows} showAll title="Crafterzy" />
       </>
     );
   }

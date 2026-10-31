@@ -23,21 +23,21 @@ const CLASS_COLORS: Record<string, string> = {
 };
 const classColor = (name: string | null) => CLASS_COLORS[(name ?? "").toLocaleLowerCase("pl-PL")] ?? "#a49888";
 
-export default function ProfessionRanking({ professions, rows }: { professions: string[]; rows: ProfessionRow[] }) {
+export default function ProfessionRanking({ professions, rows, showAll = false, title = "Profesje" }: { professions: string[]; rows: ProfessionRow[]; showAll?: boolean; title?: string }) {
   const [selected, setSelected] = useState(professions[0] ?? "");
   const ranked = useMemo(() => rows
     .filter((row) => row.profession === selected && row.level > 0)
     .sort((a, b) => b.level - a.level || a.name.localeCompare(b.name, "pl"))
-    .slice(0, 10), [rows, selected]);
+    .slice(0, showAll ? undefined : 10), [rows, selected, showAll]);
 
   return (
     <section className="gs-card gs-ranking-card gs-profession-ranking">
       <div className="gs-ranking-head">
         <div>
-          <h2 className="gs-card-title">Profesje</h2>
+          <h2 className="gs-card-title">{title}</h2>
           <p className="gs-profession-note">Ranking według ostatniego poziomu zapisanego w logach</p>
         </div>
-        <span className="gs-members-count">TOP 10</span>
+        <span className="gs-members-count">{showAll ? ranked.length : "TOP 10"}</span>
       </div>
       {professions.length === 0 ? (
         <p className="gs-members-empty">Brak zapisanych danych o profesjach. Ranking pojawi się po zaimportowaniu zdarzeń UMIEJETNOSC dotyczących profesji.</p>

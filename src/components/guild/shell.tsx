@@ -11,6 +11,7 @@ const NAV = [
   { slug: "", label: "Przegląd", Icon: IconDashboard },
   { slug: "members", label: "Członkowie", Icon: IconUsers },
   { slug: "rankings", label: "Rankingi", Icon: IconTrophy },
+  { slug: "crafterzy", label: "Crafterzy", Icon: IconTrophy },
   { slug: "settings", label: "Ustawienia", Icon: IconSettings },
 ] as const;
 
